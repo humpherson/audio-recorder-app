@@ -60,6 +60,12 @@ const AudioRecorder = () => {
       const { mediaRecorder, extension } = getMediaRecorderConfig(stream);
       mediaRecorderRef.current = mediaRecorder;
 
+      // Debug env variable
+      const azureBlobUrl = import.meta.env.VITE_AZURE_BLOB_SAS_URL;
+      if (!azureBlobUrl) {
+        console.error("Azure Blob Storage SAS URL is not defined.");
+      }
+
       // Initialize Azure Blob Storage client
       const blobServiceClient = new BlobServiceClient(
         import.meta.env.VITE_AZURE_BLOB_SAS_URL
