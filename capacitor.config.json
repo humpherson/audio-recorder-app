@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.audiorecorder",
+  "appName": "AudioRecorder",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
