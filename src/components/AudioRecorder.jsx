@@ -67,6 +67,7 @@ const AudioRecorder = () => {
       }
 
       // Debug all env variables
+      // Trying again
       console.log("Environment Variables:", import.meta.env);
 
       // Initialize Azure Blob Storage client
