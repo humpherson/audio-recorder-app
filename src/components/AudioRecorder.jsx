@@ -66,6 +66,9 @@ const AudioRecorder = () => {
         console.error("Azure Blob Storage SAS URL is not defined.");
       }
 
+      // Debug all env variables
+      console.log("Environment Variables:", import.meta.env);
+
       // Initialize Azure Blob Storage client
       const blobServiceClient = new BlobServiceClient(
         import.meta.env.VITE_AZURE_BLOB_SAS_URL
