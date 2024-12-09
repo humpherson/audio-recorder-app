@@ -4,12 +4,13 @@ import RecordingsList from "./RecordingsList";
 
 const AudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false); // Track if recording is paused
   const [recordings, setRecordings] = useState([]);
-  const mediaRecorderRef = useRef(null); // Reference to the MediaRecorder instance
-  const blockListRef = useRef([]); // Store block IDs for the block list
+  const mediaRecorderRef = useRef(null);
+  const blockListRef = useRef([]); // Store block IDs
   const blockBlobClientRef = useRef(null); // Reference to the Azure BlockBlobClient
 
-  // Helper to determine the supported MIME type
+  // Helper to determine supported MIME type
   const getMediaRecorderConfig = (stream) => {
     const mimeTypes = [
       { type: "audio/webm; codecs=opus", extension: "webm" },
@@ -69,7 +70,7 @@ const AudioRecorder = () => {
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       blockBlobClientRef.current = blockBlobClient;
 
-      // Reset block list for a new recording (4. Reset Block List for Each Recording)
+      // Reset block list for a new recording
       blockListRef.current = [];
 
       console.log(`Blob name: ${blobName}`);
@@ -78,19 +79,18 @@ const AudioRecorder = () => {
       // Event handlers for MediaRecorder
       mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0) {
-          // Process non-zero-size chunks (1. Check for Zero-Size Chunks)
           const chunk = event.data;
-          const blockId = btoa(`block-${Date.now()}`); // Unique block ID
-          blockListRef.current.push(blockId); // Add block ID to the list for commit
+          const blockId = btoa(`block-${Date.now()}`);
+          blockListRef.current.push(blockId);
 
           console.log(`Chunk created. Size: ${chunk.size} bytes`);
           console.log(`Uploading block with ID: ${blockId}`);
 
           try {
-            // Retry logic for chunk upload (5. Retry Logic for Chunk Uploads)
+            // Retry logic for chunk upload
             await retry(() =>
               blockBlobClient.stageBlock(blockId, chunk, chunk.size)
-            ); // Correctly specify chunk size (2. Correctly Specify Chunk Size)
+            );
             console.log(`Block ${blockId} uploaded successfully`);
           } catch (error) {
             console.error(`Failed to upload block ${blockId}:`, error);
@@ -103,19 +103,19 @@ const AudioRecorder = () => {
       mediaRecorder.onstop = async () => {
         console.log("Recording stopped. Committing block list...");
         try {
-          // Ensure there are blocks to commit (3. Ensure Proper Blob Initialization)
+          // Ensure proper blob initialization
           if (blockListRef.current.length === 0) {
             console.warn("No blocks to commit. Recording might be empty.");
             return;
           }
 
-          // Retry logic for committing the block list (6. Retry Logic for Block List Commit)
+          // Retry logic for committing the block list
           await retry(() =>
             blockBlobClientRef.current.commitBlockList(blockListRef.current)
           );
           console.log("All blocks committed successfully!");
 
-          // Save recording URL for playback or download
+          // Save recording URL
           setRecordings((prev) => [
             ...prev,
             { name: blobName, url: blockBlobClientRef.current.url },
@@ -128,17 +128,35 @@ const AudioRecorder = () => {
       // Start recording
       mediaRecorder.start(1000); // Capture data every 1 second
       setIsRecording(true);
+      setIsPaused(false);
       console.log("Recording started.");
     } catch (error) {
       console.error("Error accessing microphone or Azure Blob Storage:", error);
     }
   };
 
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && isRecording && !isPaused) {
+      console.log("Pausing recording...");
+      mediaRecorderRef.current.pause(); // Pause recording
+      setIsPaused(true);
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && isRecording && isPaused) {
+      console.log("Resuming recording...");
+      mediaRecorderRef.current.resume(); // Resume recording
+      setIsPaused(false);
+    }
+  };
+
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       console.log("Stopping recording...");
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stop(); // Stop recording
       setIsRecording(false);
+      setIsPaused(false);
     }
   };
 
@@ -154,13 +172,37 @@ const AudioRecorder = () => {
             Start Recording
           </button>
         )}
-        {isRecording && (
-          <button
-            onClick={stopRecording}
-            className="bg-red-500 text-white px-4 py-2 rounded"
-          >
-            Stop Recording
-          </button>
+        {isRecording && !isPaused && (
+          <>
+            <button
+              onClick={pauseRecording}
+              className="bg-yellow-500 text-white px-4 py-2 rounded mr-2"
+            >
+              Pause Recording
+            </button>
+            <button
+              onClick={stopRecording}
+              className="bg-red-500 text-white px-4 py-2 rounded"
+            >
+              Stop Recording
+            </button>
+          </>
+        )}
+        {isRecording && isPaused && (
+          <>
+            <button
+              onClick={resumeRecording}
+              className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+            >
+              Resume Recording
+            </button>
+            <button
+              onClick={stopRecording}
+              className="bg-red-500 text-white px-4 py-2 rounded"
+            >
+              Stop Recording
+            </button>
+          </>
         )}
       </div>
       <RecordingsList recordings={recordings} />
