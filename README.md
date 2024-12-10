@@ -29,7 +29,7 @@ The Audio Recorder App allows users to record audio, pause/resume recordings, an
 
 ### Installation
 
-1.  Clone the repository:|
+1.  Clone the repository:
 
     `git clone https://github.com/your-username/audio-recorder-app.git`
     `cd audio-recorder-app`
@@ -72,19 +72,21 @@ The Audio Recorder App allows users to record audio, pause/resume recordings, an
 2.  Sync the project:
 
     `npm run build`
+    
     `npx cap copy`
+    
     `npx cap sync android`
 
-3.  Open the Android project in Android Studio:
+4.  Open the Android project in Android Studio:
 
     `npx cap open android`
 
-4.  Build the APK:
+5.  Build the APK:
 
     - In Android Studio, go to **Build > Build Bundle(s)/APK(s) > Build APK(s)**.
     - Locate the APK in `android/app/build/outputs/apk/debug/`
 
-5.  Share and install the APK on your Android device.
+6.  Share and install the APK on your Android device.
 
 ## Contributing
 
