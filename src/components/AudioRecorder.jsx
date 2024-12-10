@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { BlobServiceClient } from "@azure/storage-blob";
 import RecordingsList from "./RecordingsList";
 
@@ -29,6 +29,33 @@ const AudioRecorder = () => {
 
     throw new Error("No supported MIME types found for MediaRecorder.");
   };
+
+  // Fetch all recordings from Azure Blob Storage
+  const fetchRecordings = async () => {
+    try {
+      const blobServiceClient = new BlobServiceClient(
+        import.meta.env.VITE_AZURE_BLOB_SAS_URL
+      );
+      const containerClient =
+        blobServiceClient.getContainerClient("audio-recordings");
+
+      const blobList = [];
+      for await (const blob of containerClient.listBlobsFlat()) {
+        const blobClient = containerClient.getBlobClient(blob.name);
+        const blobUrl = blobClient.url;
+        blobList.push({ name: blob.name, url: blobUrl });
+      }
+
+      setRecordings(blobList);
+      console.log("Fetched recordings from Blob Storage:", blobList);
+    } catch (error) {
+      console.error("Failed to fetch recordings:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecordings();
+  }, []);
 
   // Helper function to retry operations with retries and delays
   const retry = async (operation, retries = 3, delay = 1000) => {
@@ -115,11 +142,8 @@ const AudioRecorder = () => {
           );
           console.log("All blocks committed successfully!");
 
-          // Save recording URL
-          setRecordings((prev) => [
-            ...prev,
-            { name: blobName, url: blockBlobClientRef.current.url },
-          ]);
+          // Fetch updated list of recordings
+          fetchRecordings();
         } catch (error) {
           console.error("Failed to commit block list:", error);
         }

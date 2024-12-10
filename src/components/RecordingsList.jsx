@@ -2,33 +2,36 @@ import React from "react";
 
 const RecordingsList = ({ recordings, onDelete }) => {
   if (recordings.length === 0) {
-    return <p>No recordings available. Start recording to see them here!</p>;
+    return (
+      <p className="text-gray-600">
+        No recordings available. Start recording to see them here!
+      </p>
+    );
   }
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Your Recordings</h2>
+      <h2 className="text-lg font-semibold mb-4 mt-8">Your Recordings</h2>
       <ul>
         {recordings.map((recording, index) => (
-          <li key={index} className="mb-4">
-            <div className="mb-2">
-              <strong>{recording.name}</strong>
+          <li key={recording.name} className="mb-4 p-4 border rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <strong className="truncate">{recording.name}</strong>
             </div>
             <audio controls src={recording.url} className="w-full"></audio>
-            <div className="mt-2">
+            <div className="mt-2 flex space-x-4">
               <button
-                className="bg-red-500 text-white px-4 py-2 rounded mr-2"
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 onClick={() => onDelete(recording.name)}
               >
                 Delete
               </button>
               <a
                 href={recording.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
+                download={recording.name}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
-                Download Recording
+                Download
               </a>
             </div>
           </li>
