@@ -1,6 +1,6 @@
 import React from "react";
 
-const RecordingsList = ({ recordings }) => {
+const RecordingsList = ({ recordings, onDelete }) => {
   if (recordings.length === 0) {
     return <p>No recordings available. Start recording to see them here!</p>;
   }
@@ -16,6 +16,12 @@ const RecordingsList = ({ recordings }) => {
             </div>
             <audio controls src={recording.url} className="w-full"></audio>
             <div className="mt-2">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded mr-2"
+                onClick={() => onDelete(recording.name)}
+              >
+                Delete
+              </button>
               <a
                 href={recording.url}
                 target="_blank"

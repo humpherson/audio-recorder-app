@@ -160,6 +160,28 @@ const AudioRecorder = () => {
     }
   };
 
+  const deleteRecording = async (recordingName) => {
+    try {
+      // Remove recording from the state
+      setRecordings((prevRecordings) =>
+        prevRecordings.filter((rec) => rec.name !== recordingName)
+      );
+
+      // Delete the file from Azure Blob Storage
+      const blobServiceClient = new BlobServiceClient(
+        import.meta.env.VITE_AZURE_BLOB_SAS_URL
+      );
+      const containerClient =
+        blobServiceClient.getContainerClient("audio-recordings");
+      const blobClient = containerClient.getBlobClient(recordingName);
+
+      await blobClient.delete();
+      console.log(`Deleted recording: ${recordingName}`);
+    } catch (error) {
+      console.error(`Failed to delete recording: ${recordingName}`, error);
+    }
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Audio Recorder</h1>
@@ -205,7 +227,7 @@ const AudioRecorder = () => {
           </>
         )}
       </div>
-      <RecordingsList recordings={recordings} />
+      <RecordingsList recordings={recordings} onDelete={deleteRecording} />
     </div>
   );
 };
