@@ -2,16 +2,11 @@ import React from "react";
 
 const RecordingsList = ({ recordings, onDelete }) => {
   if (recordings.length === 0) {
-    return (
-      <p className="text-gray-600">
-        No recordings available. Start recording to see them here!
-      </p>
-    );
+    return <p className="text-gray-400">No recordings available.</p>;
   }
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4 mt-8">Your Recordings</h2>
       <ul>
         {recordings.map((recording, index) => (
           <li key={recording.name} className="mb-4 p-4 border rounded-lg">

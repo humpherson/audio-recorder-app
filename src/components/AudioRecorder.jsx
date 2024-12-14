@@ -10,6 +10,11 @@ const AudioRecorder = () => {
   const blockListRef = useRef([]); // Store block IDs
   const blockBlobClientRef = useRef(null); // Reference to the Azure BlockBlobClient
 
+  const canvasRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
+
   // Helper to determine supported MIME type
   const getMediaRecorderConfig = (stream) => {
     const mimeTypes = [
@@ -82,6 +87,19 @@ const AudioRecorder = () => {
       console.log("Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log("Microphone access granted. Initializing MediaRecorder...");
+
+      // Set up Web Audio API for visualization
+      const audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048; // Controls the resolution of the waveform
+      analyserRef.current = analyser;
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      // Start the sine wave visualization
+      visualizeSineWave();
 
       // Get MediaRecorder instance and file extension based on supported MIME type
       const { mediaRecorder, extension } = getMediaRecorderConfig(stream);
@@ -164,6 +182,10 @@ const AudioRecorder = () => {
       console.log("Pausing recording...");
       mediaRecorderRef.current.pause(); // Pause recording
       setIsPaused(true);
+      // Stop the animation
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     }
   };
 
@@ -172,6 +194,8 @@ const AudioRecorder = () => {
       console.log("Resuming recording...");
       mediaRecorderRef.current.resume(); // Resume recording
       setIsPaused(false);
+      // Resume the animation
+      visualizeSineWave();
     }
   };
 
@@ -182,6 +206,56 @@ const AudioRecorder = () => {
       setIsRecording(false);
       setIsPaused(false);
     }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+  };
+
+  const visualizeSineWave = () => {
+    const canvas = canvasRef.current;
+    const canvasContext = canvas.getContext("2d");
+    const analyser = analyserRef.current;
+
+    const bufferLength = analyser.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      analyser.getByteTimeDomainData(dataArray);
+
+      canvasContext.fillStyle = "rgb(255, 255, 255)";
+      canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+
+      canvasContext.lineWidth = 2;
+      canvasContext.strokeStyle = "rgb(0, 0, 0)";
+      canvasContext.beginPath();
+
+      const sliceWidth = (canvas.width * 1.0) / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * canvas.height) / 2;
+
+        if (i === 0) {
+          canvasContext.moveTo(x, y);
+        } else {
+          canvasContext.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      canvasContext.lineTo(canvas.width, canvas.height / 2);
+      canvasContext.stroke();
+
+      animationFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
   };
 
   const deleteRecording = async (recordingName) => {
@@ -251,6 +325,13 @@ const AudioRecorder = () => {
           </>
         )}
       </div>
+      <canvas
+        ref={canvasRef}
+        width="600"
+        height="200"
+        className="border"
+      ></canvas>
+      <h1 className="text-xl font-bold mt-8 mb-4">All Recordings</h1>
       <RecordingsList recordings={recordings} onDelete={deleteRecording} />
     </div>
   );
